@@ -239,6 +239,35 @@ def fetch_wwr_rss() -> List[Dict]:
         )
     return jobs
 
+def fetch_greenhouse_board(board: str, company_label: str) -> List[Dict]:
+    # Greenhouse Job Board API (public)
+    # docs: https://developers.greenhouse.io/job-board.html
+    url = f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs?content=true"
+    r = requests.get(url, headers=UA, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+
+    jobs = []
+    for item in data.get("jobs", []):
+        title = item.get("title") or ""
+        # public apply URL comes as absoluteUrl
+        job_url = item.get("absoluteUrl") or item.get("url") or ""
+        desc = item.get("content") or ""
+        location = (item.get("location") or {}).get("name") or ""
+        departments = " ".join([d.get("name","") for d in (item.get("departments") or [])])
+        offices = " ".join([o.get("name","") for o in (item.get("offices") or [])])
+
+        jobs.append({
+            "source": f"greenhouse:{board}",
+            "title": title,
+            "company": company_label,
+            "url": job_url,
+            "description": desc,
+            "tags": " ".join([departments, offices]).strip(),
+            "location": location,
+            "salary": "",  # Greenhouse usualmente no publica salary en el API
+        })
+    return jobs
 
 # ---------------------------
 # Filtering / Scoring
@@ -248,6 +277,14 @@ def job_text(j: Dict) -> str:
 
 
 def passes_filters(j: Dict) -> Tuple[bool, List[str]]:
+    title = norm(j.get("title",""))
+    role_ok = any(x in title for x in [
+        "backend", "back-end", "platform", "server", "distributed",
+        "software engineer", "java", "api", "systems", "infrastructure"
+    ])
+    if not role_ok:
+        return False, ["title_not_backend_platform"]
+
     reasons = []
     text = job_text(j)
 
@@ -356,7 +393,13 @@ def main() -> int:
     all_jobs: List[Dict] = []
 
     # Fetch with best-effort (don’t fail whole run if one source fails)
-    for fn in (fetch_remoteok, fetch_remotive, fetch_wwr_rss):
+    for fn in (
+        fetch_remoteok,
+        fetch_remotive,
+        fetch_wwr_rss,
+        lambda: fetch_greenhouse_board("gitlab", "GitLab"),
+        lambda: fetch_greenhouse_board("elastic", "Elastic"),
+        ):
         try:
             all_jobs.extend(fn())
         except Exception as e:
