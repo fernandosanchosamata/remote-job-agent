@@ -1,0 +1,54 @@
+name: Daily Remote Job Agent
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # 12:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run agent
+        env:
+          # Telegram
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          # Filters
+          KEYWORDS: "java,spring,spring boot,microservices,kafka,elasticsearch,kubernetes,gcp,aws"
+          MUST_HAVE: "java,spring"
+          NEGATIVE_KEYWORDS: "onsite,on-site,hybrid,relocation,local only,US work authorization"
+          ALLOW_LATAM_HINTS: "latam,latin america,south america,anywhere,global,worldwide,remote"
+          ALLOW_EU_HINTS: "europe,emea,eu,uk,remote"
+          CURRENCY_HINTS: "usd,$,eur,€,salary,compensation"
+
+          # Optional threshold (0 = off)
+          MIN_USD: "0"
+          MAX_RESULTS: "25"
+
+          # DB path (will be committed unless you use artifacts; simplest is commit DB is NOT recommended)
+          DB_PATH: "jobs.db"
+
+          # Optional email (leave empty to disable)
+          SMTP_HOST: ""
+          SMTP_PORT: "587"
+          SMTP_USER: ""
+          SMTP_PASS: ""
+          EMAIL_TO: ""
+          EMAIL_FROM: ""
+        run: |
+          python job_agent.py
