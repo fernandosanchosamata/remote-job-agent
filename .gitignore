@@ -1,0 +1,5 @@
+# Ignore the entire virtual environment folder
+.venv/
+
+# Ignore the specific jobs database
+jobs.db

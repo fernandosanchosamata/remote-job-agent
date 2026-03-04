@@ -29,7 +29,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
           # Filters
-          KEYWORDS: "java,spring,spring boot,microservices,kafka,elasticsearch,kubernetes,gcp,aws,backend,platform,distributed"
+          KEYWORDS: "java,spring,spring boot,microservices,kafka,elasticsearch,kubernetes,gcp,backend,platform,distributed"
           MUST_HAVE: "java,backend,platform"
           NEGATIVE_KEYWORDS: "social media,marketing,ui,ux,frontend,front-end,react,designer,product manager,account executive,sales,customer support,qa,manual tester"
           ALLOW_LATAM_HINTS: "latam,latin america,south america,anywhere,global,worldwide,remote,distributed"
@@ -38,7 +38,6 @@ jobs:
           MIN_USD: "80000"
 
           # Optional threshold (0 = off)
-          MIN_USD: "0"
           MAX_RESULTS: "25"
 
           # DB path (will be committed unless you use artifacts; simplest is commit DB is NOT recommended)
